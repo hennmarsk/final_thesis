@@ -1,4 +1,8 @@
 {
     "python.linting.enabled": false,
-    "python.pythonPath": "D:\\anaconda3\\envs\\face\\python.exe"
+    "python.pythonPath": "/usr/bin/python3.6",
+    "git.ignoreLimitWarning": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": false,
+    "python.linting.banditEnabled": true
 }
