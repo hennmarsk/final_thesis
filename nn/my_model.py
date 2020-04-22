@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Input
 
 def create_model(input_shape):
     inp = Input(shape=input_shape)
-    out = applications.MobileNetV2(
+    out = applications.ResNet50(
         weights=None, input_shape=input_shape, classes=128)(inp)
     model = Model(inputs=inp, outputs=out)
     return model

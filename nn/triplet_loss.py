@@ -67,7 +67,7 @@ def loss(metric, squared=False):
         if metric == 'cosine':
             margin = 0.01
         else:
-            margin = 0.6
+            margin = 0.5
         pairwise_dist = _distance_mode(y_pred, metric)
         mask_anchor_positive = _get_anchor_positive_triplet_mask(y_true)
         mask_anchor_positive = tf.compat.v1.to_float(mask_anchor_positive)

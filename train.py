@@ -11,7 +11,12 @@ class base:
     def train(self, metric):
         self.model.compile(loss=tl.loss(metric), optimizer='adam')
         self.model.fit_generator(generator=utils.celeba_generator(
-        ), steps_per_epoch=utils.get_partition_size() / 64, epochs=1)
+                                    batch_size=32),
+                                 epochs=100,
+                                 steps_per_epoch=utils.get_partition_size()/32,
+                                 validation_data=utils.celeba_generator(
+            partition='1'),
+            validation_steps=utils.get_partition_size('1')/32)
         self.model.save_weights(f'{metric}_weights.h5')
 
 
