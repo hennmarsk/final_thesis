@@ -23,7 +23,7 @@ def _get_new_img_list(partition):
     for key in identity:
         person = identity[key]
         sz = len(person)
-        i = 0
+        i = 1
         while i < sz:
             ap = []
             for j in range(i, np.min([i+4, sz])):
