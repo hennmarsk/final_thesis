@@ -22,6 +22,8 @@ def _get_new_img_list(partition):
                 identity[split[1]] = [split[0]]
     for key in identity:
         person = identity[key]
+        random.seed(a=None)
+        random.shuffle(person)
         sz = len(person)
         i = 1
         while i < sz:
@@ -30,6 +32,7 @@ def _get_new_img_list(partition):
                 ap.append([person[j], key])
             tmp_list.append(ap)
             i = np.min([i+4, sz])
+    random.seed(a=None)
     random.shuffle(tmp_list)
     for i in tmp_list:
         for j in i:
