@@ -3,65 +3,36 @@ import numpy as np
 import random
 
 
-def _get_new_img_list(partition):
-    img_list = []
-    tmp_list = []
+def _get_img_list(partition):
     file1 = open("./data/list_eval_partition.txt").readlines()
     partition_list = {}
     for line in file1:
         split = line.split()
         partition_list[split[0]] = split[1]
     file2 = open("./data/identity_CelebA.txt").readlines()
-    identity = {}
+    img_list = {}
     for line in file2:
         split = line.split()
         if partition_list[split[0]] == partition:
-            if split[1] in identity:
-                identity[split[1]].append(split[0])
+            if split[1] in img_list:
+                img_list[split[1]].append(split[0])
             else:
-                identity[split[1]] = [split[0]]
-    for key in identity:
-        person = identity[key]
-        random.seed(a=None)
-        random.shuffle(person)
-        sz = len(person)
-        i = 1
-        while i < sz:
-            ap = []
-            for j in range(i, np.min([i+4, sz])):
-                ap.append([person[j], key])
-            tmp_list.append(ap)
-            i = np.min([i+4, sz])
-    random.seed(a=None)
-    random.shuffle(tmp_list)
-    for i in tmp_list:
-        for j in i:
-            img_list.append(j)
+                img_list[split[1]] = [split[0]]
     return img_list
 
 
-def celeba_generator(batch_size=64, partition='0'):
-    img_list = _get_new_img_list(partition)
-    size = len(img_list)
-    ind = 0
+def celeba_generator(person_num=16, partition='0'):
+    img_list = _get_img_list(partition)
+    random.seed(a=None)
     while(1):
         x = []
         y = []
-        for i in range(ind, np.min([ind + batch_size, size])):
-            img = cv2.imread(f"./data/img_align_celeba/{img_list[i][0]}")/255
-            x.append(img)
-            y.append(int(img_list[i][1]))
+        person_list = random.sample(list(img_list), person_num)
+        for person in person_list:
+            person_img = img_list[person]
+            person_img = random.sample(
+                list(person_img), np.min([4, len(person_img)]))
+            for img in person_img:
+                x.append(cv2.imread(f'./data/img_align_celeba/{img}')/255)
+                y.append(int(person))
         yield np.array(x), np.array(y)
-        ind = np.min([ind + batch_size, size]) % size
-        if ind == 0:
-            img_list = _get_new_img_list(partition)
-
-
-def get_partition_size(partition='0'):
-    partition_list = open("./data/list_eval_partition.txt").readlines()
-    res = 0
-    for line in partition_list:
-        split = line.split()
-        if split[1] == partition:
-            res += 1
-    return res

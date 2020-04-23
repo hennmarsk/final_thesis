@@ -8,15 +8,17 @@ class base:
         self.input_shape = [218, 178, 3]
         self.model = my_model.create_model(self.input_shape)
         self.batch = 128
+        self.step_t = 100000
+        self.step_v = int(self.step_t / 8)
 
     def train(self, metric):
         self.model.compile(loss=tl.loss(metric), optimizer='adam')
         self.model.fit_generator(generator=utils.celeba_generator(),
-                                 epochs=100,
-            steps_per_epoch=utils.get_partition_size()/self.batch,
-            validation_data=utils.celeba_generator(
+                       epochs=10,
+                       steps_per_epoch=self.step_t,
+                       validation_data=utils.celeba_generator(
             partition='1'),
-            validation_steps=utils.get_partition_size('1')/self.batch)
+            validation_steps=self.step_v)
         self.model.save_weights(f'{metric}_weights.h5')
 
 
