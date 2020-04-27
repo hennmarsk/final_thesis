@@ -32,7 +32,7 @@ def celeba_gen(batch_size, partition='0'):
     pos = []
     neg = []
     ind = 0
-    while(1):
+    while(True):
         t = random.randint(1, sz - 1)
         random.shuffle(k)
         p = (pp + t) % sz
@@ -56,3 +56,21 @@ def celeba_gen(batch_size, partition='0'):
                     anc.clear()
                     pos.clear()
                     neg.clear()
+
+
+def celeba_gen_batch(batch_size, partition='0'):
+    random.seed(a=None)
+    img_list = _get_img_list(partition)
+    key = list(img_list.keys())
+    while(True):
+        x = []
+        y = []
+        people = random.sample(key, np.min([batch_size, len(key)]))
+        for person in people:
+            imgs = random.sample(img_list[person], np.min(
+                [4, len(img_list[person])]))
+            for src in imgs:
+                img = cv2.imread(f"./data/img_align_celeba/{src}") / 255
+                x.append(img)
+                y.append(int(person))
+        yield np.array(x), np.array(y)
