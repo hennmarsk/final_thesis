@@ -1,3 +1,2 @@
-/data/img_align_celeba
-cosine_weights.h5
-euclid_weights.h5
+/data
+/weights

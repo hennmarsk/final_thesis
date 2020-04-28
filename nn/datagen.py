@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import random
+import mxnet as mx
+from mxnet import recordio
 
 
 def _get_img_list(partition):
@@ -74,3 +76,28 @@ def celeba_gen_batch(batch_size, partition='0'):
                 x.append(img)
                 y.append(int(person))
         yield np.array(x), np.array(y)
+
+
+def ms1m_gen(batch_size):
+    path_idx = "./data/faces_emore/train.idx"
+    path_rec = "./data/faces_emore/train.rec"
+    imgrec = recordio.MXIndexedRecordIO(path_idx, path_rec, 'r')
+    x = []
+    y = []
+    ind = 0
+    random.seed(a=None)
+    iterator = np.arange(3804847) + 1
+    while(True):
+        random.shuffle(iterator)
+        for i in iterator:
+            header, s = recordio.unpack(imgrec.read_idx(i))
+            img = mx.image.imdecode(s).asnumpy() / 255
+            x.append(img)
+            y.append(header.label)
+            ind = (ind + 1) % batch_size
+            if (ind == 0):
+                yield np.array(x), np.array(y)
+                x.clear()
+                y.clear()
+        if (ind > 0):
+            yield np.array(x)[0:ind], np.array(y)[0:ind]

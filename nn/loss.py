@@ -81,9 +81,10 @@ def _get_triplet_mask(y_true):
     return mask
 
 
-def batch_all(margin, squared=False):
+def batch_all(margin=0.5, squared=False):
     def instance(y_true, y_pred):
         pairwise_dist = _pairwise_distances(y_pred, squared=squared)
+        y_true = tf.squeeze(y_true, axis=-1)
         anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
         assert anchor_positive_dist.shape[2] == 1, "{}".format(
             anchor_positive_dist.shape)
@@ -95,7 +96,7 @@ def batch_all(margin, squared=False):
         mask = tf.cast(mask, tf.float32)
         triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
-        valid_triplets = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float)
+        valid_triplets = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float32)
         num_positive_triplets = tf.reduce_sum(valid_triplets)
         num_valid_triplets = tf.reduce_sum(mask)
         fraction_positive_triplets = num_positive_triplets / \
