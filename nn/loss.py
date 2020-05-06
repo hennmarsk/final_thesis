@@ -22,9 +22,9 @@ def _distance(x, y, metric):
 def triplet_loss(metric, batch_size):
     def instance(y_true, y_pred):
         if (metric == 'euclid'):
-            margin = 0.2
+            margin = 0.5
         else:
-            margin = 0.01
+            margin = 0.05
         sz = batch_size * 3
         anchor = y_pred[0:int(sz*1/3)]
         positive = y_pred[int(sz*1/3):int(sz*2/3)]
@@ -96,14 +96,14 @@ def batch_all(margin=0.5, squared=False):
         mask = tf.cast(mask, tf.float32)
         triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
-        valid_triplets = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float32)
+        mask1 = tf.logical_and(tf.greater(
+            triplet_loss, 1e-16), tf.less(triplet_loss, margin))
+        valid_triplets = tf.cast(mask1, tf.float32)
+        triplet_loss = tf.multiply(tf.cast(mask1, tf.float32), triplet_loss)
         num_positive_triplets = tf.reduce_sum(valid_triplets)
-        num_valid_triplets = tf.reduce_sum(mask)
-        fraction_positive_triplets = num_positive_triplets / \
-            (num_valid_triplets + 1e-16)
-        triplet_loss = tf.reduce_sum(triplet_loss) / \
-            (num_positive_triplets + 1e-16)
-        return triplet_loss, fraction_positive_triplets
+        triplet_loss = tf.reduce_sum(
+            triplet_loss) / (num_positive_triplets + 1e-16)
+        return triplet_loss
     return instance
 
 
@@ -126,6 +126,21 @@ def batch_hard(margin=0.5, squared=False):
             anchor_negative_dist, axis=1, keepdims=True)
         triplet_loss = tf.maximum(
             hardest_positive_dist - hardest_negative_dist + margin, 0.0)
-        triplet_loss = tf.reduce_mean(triplet_loss)
         return triplet_loss
+    return instance
+
+
+def pairwise_loss_batch(margin=0.5, squared=False):
+    def instance(y_true, y_pred):
+        pd = _pairwise_distances(y_pred, squared=squared)
+        y_true = tf.squeeze(y_true, axis=-1)
+        mp = _get_anchor_positive_triplet_mask(y_true)
+        mp = tf.cast(mp, tf.float32)
+        pd = pd * mp + tf.maximum(0.0, margin - pd) * (1 - mp)
+        ones = tf.ones_like(pd)
+        mask_a = tf.linalg.band_part(ones, 0, -1)
+        mask_b = tf.linalg.band_part(ones, 0, 0)
+        mask = tf.cast(mask_a - mask_b, dtype=tf.bool)
+        pw_loss = tf.boolean_mask(pd, mask)
+        return pw_loss
     return instance

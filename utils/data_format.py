@@ -6,7 +6,7 @@ eval_list = open("/home/tung/final-thesis/data/list_eval_partition.txt")
 lines = eval_list.readlines()
 for ind, line in enumerate(lines):
     parsed = line.split()
-    eval_array[ind]=parsed[1]
+    eval_array[ind] = parsed[1]
 
 celeb_list = open("/home/tung/final-thesis/data/identity_CelebA.txt")
 lines = celeb_list.readlines()
@@ -19,8 +19,11 @@ for ind, line in enumerate(lines):
         eval_name = 'validate'
     else:
         eval_name = 'test'
-    if not os.path.exists(f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}"):
+    if not os.path.exists(
+            f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}"):
         os.makedirs(f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}")
-    size = len(os.listdir(f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}"))
-    os.rename(f"/home/tung/final-thesis/data/img_align_celeba/{parsed[0]}", f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}/{size}")
+    size = len(os.listdir(
+        f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}"))
+    os.rename(f"/home/tung/final-thesis/data/img_align_celeba/{parsed[0]}",
+              f"/home/tung/final-thesis/data/{eval_name}/{parsed[1]}/{size}")
     print(ind)
