@@ -13,28 +13,30 @@ class base:
         self.step_t = 32000
         self.sample = 16
         self.epochs = 100
-        self.step_v = int(self.step_t / 8)
+        self.step_v = int(self.step_t / 32)
         self.learning_rate = 1e-2
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
-    def train(self, metric, pretrain):
+    def train(self, metric, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
-        self.model.compile(loss=L.batch_all(),
+        self.model.compile(loss=L.batch_all(metric),
                            optimizer=self.optimizer)
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(f"./weights/weight_best_{metric}.hdf5",
-                                     monitor='loss', verbose=1,
+                                     monitor='val_loss', verbose=1,
                                      save_best_only=True,
-                                     mode='auto', period=1)
+                                     mode='auto', save_freq='epoch')
         callbacks_list = [csv_logger, checkpoint]
-        self.model.fit_generator(generator=dg.ms1m_gen_batch(
+        self.model.fit(x=dg.ms1m_gen_batch(
             self.batch, self.sample),
             epochs=self.epochs,
             steps_per_epoch=self.step_t,
+            validation_data=dg.celeba_gen_batch(self.batch, self.sample),
+            validation_steps=self.step_v,
             callbacks=callbacks_list)
         self.model.save_weights(f"./weights/final_weight_{metric}.hdf5")
 
 
 l2 = base()
-l2.train('euclid', './weights/weight_best_euclid.hdf5')
+l2.train('euclid')

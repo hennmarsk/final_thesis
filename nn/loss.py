@@ -1,43 +1,7 @@
 import tensorflow as tf
-import tensorflow.keras.backend as K
 
 
-def _euclid(x, y):
-    return K.sqrt(K.sum(K.square(K.maximum(x - y, K.epsilon())), axis=1))
-
-
-def _cosine(x, y):
-    x = K.l2_normalize(x, axis=-1)
-    y = K.l2_normalize(y, axis=-1)
-    return 1 - K.mean(K.maximum(x * y, K.epsilon()), axis=-1, keepdims=True)
-
-
-def _distance(x, y, metric):
-    if metric == 'euclid':
-        return _euclid(x, y)
-    else:
-        return _cosine(x, y)
-
-
-def triplet_loss(metric, batch_size):
-    def instance(y_true, y_pred):
-        if (metric == 'euclid'):
-            margin = 0.5
-        else:
-            margin = 0.05
-        sz = batch_size * 3
-        anchor = y_pred[0:int(sz*1/3)]
-        positive = y_pred[int(sz*1/3):int(sz*2/3)]
-        negative = y_pred[int(sz*2/3):int(sz*3/3)]
-        pos_dist = _distance(anchor, positive, metric)
-        neg_dist = _distance(anchor, negative, metric)
-        basic_loss = pos_dist - neg_dist + margin
-        loss = K.maximum(basic_loss, 0.0)
-        return loss
-    return instance
-
-
-def _pairwise_distances(y_pred, squared=False):
+def _pairwise_euclid(y_pred, squared=False):
     dot_product = tf.matmul(y_pred, tf.transpose(y_pred))
     square_norm = tf.linalg.diag_part(dot_product)
     distances = tf.expand_dims(square_norm, 1) - 2.0 * \
@@ -46,6 +10,20 @@ def _pairwise_distances(y_pred, squared=False):
     if not squared:
         distances = tf.sqrt(distances)
     return distances
+
+
+def _pairwise_cosine(y_pred):
+    normalize_a = tf.nn.l2_normalize(y_pred, 1)
+    normalize_b = tf.nn.l2_normalize(tf.transpose(y_pred), 1)
+    distance = 1 - tf.matmul(normalize_a, normalize_b, transpose_b=True)
+    return distance
+
+
+def _distance(metric, y_pred, squared=False):
+    if metric == 'euclid':
+        return _pairwise_euclid(y_pred, squared)
+    else:
+        return _pairwise_cosine(y_pred)
 
 
 def _get_anchor_positive_triplet_mask(y_true):
@@ -81,9 +59,9 @@ def _get_triplet_mask(y_true):
     return mask
 
 
-def batch_all(margin=0.5, squared=False):
+def batch_all(metric, margin=0.5, squared=False):
     def instance(y_true, y_pred):
-        pairwise_dist = _pairwise_distances(y_pred, squared=squared)
+        pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
         assert anchor_positive_dist.shape[2] == 1, "{}".format(
@@ -108,9 +86,9 @@ def batch_all(margin=0.5, squared=False):
     return instance
 
 
-def batch_hard(margin=0.5, squared=False):
+def batch_hard(metric, margin=0.5, squared=False):
     def instance(y_true, y_pred):
-        pairwise_dist = _pairwise_distances(y_pred, squared=squared)
+        pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         mask_anchor_positive = _get_anchor_positive_triplet_mask(y_true)
         mask_anchor_positive = tf.cast(mask_anchor_positive, tf.float32)
@@ -131,9 +109,9 @@ def batch_hard(margin=0.5, squared=False):
     return instance
 
 
-def batch_semi_hard(margin=0.5, squared=False):
+def batch_semi_hard(metric, margin=0.5, squared=False):
     def instance(y_true, y_pred):
-        pairwise_dist = _pairwise_distances(y_pred, squared=squared)
+        pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         mask_anchor_positive = _get_anchor_positive_triplet_mask(y_true)
         mask_anchor_positive = tf.cast(mask_anchor_positive, tf.float32)
@@ -159,20 +137,4 @@ def batch_semi_hard(margin=0.5, squared=False):
         triplet_loss = tf.boolean_mask(triplet_loss, mask_f)
         mask_2 = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float32)
         return tf.reduce_sum(triplet_loss) / (tf.reduce_sum(mask_2) + 1e-16)
-    return instance
-
-
-def pairwise_loss_batch(margin=0.5, squared=False):
-    def instance(y_true, y_pred):
-        pd = _pairwise_distances(y_pred, squared=squared)
-        y_true = tf.squeeze(y_true, axis=-1)
-        mp = _get_anchor_positive_triplet_mask(y_true)
-        mp = tf.cast(mp, tf.float32)
-        pd = pd * mp + tf.maximum(0.0, margin - pd) * (1 - mp)
-        ones = tf.ones_like(pd)
-        mask_a = tf.linalg.band_part(ones, 0, -1)
-        mask_b = tf.linalg.band_part(ones, 0, 0)
-        mask = tf.cast(mask_a - mask_b, dtype=tf.bool)
-        pw_loss = tf.boolean_mask(pd, mask)
-        return pw_loss
     return instance

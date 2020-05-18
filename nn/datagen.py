@@ -45,7 +45,7 @@ def celeba_gen(batch_size):
         yield x, y
 
 
-def celeba_gen_batch(batch_size):
+def celeba_gen_batch(batch_size, sample_size):
     random.seed(a=None)
     img_list = _get_img_list()
     key = list(img_list.keys())
@@ -55,7 +55,7 @@ def celeba_gen_batch(batch_size):
         people = random.sample(key, np.min([batch_size, len(key)]))
         for person in people:
             imgs = random.sample(img_list[person], np.min(
-                [16, len(img_list[person])]))
+                [sample_size, len(img_list[person])]))
             for src in imgs:
                 img = cv2.imread(
                     f"./data/img_align_celeba_112/{src}") / 255
@@ -139,25 +139,3 @@ def ms1m_gen_batch(batch_size, sample_size):
                 x.append(img)
                 y.append(person)
         yield np.array(x), np.array(y)
-
-
-def ms1m_gen_batch_random(batch_size):
-    random.seed(a=None)
-    path_idx = "./data/faces_emore/train.idx"
-    path_rec = "./data/faces_emore/train.rec"
-    imgrec = recordio.MXIndexedRecordIO(path_idx, path_rec, 'r')
-    sz = 3804847
-    iterator = np.arange(sz) + 1
-    x = []
-    y = []
-    while True:
-        random.shuffle(iterator)
-        for i in iterator:
-            header, s = recordio.unpack(imgrec.read_idx(i))
-            img = mx.image.imdecode(s).asnumpy() / 255
-            x.append(img)
-            y.append(header.label)
-            if (len(x) == batch_size):
-                yield np.array(x), np.array(y)
-                x.clear()
-                y.clear()
