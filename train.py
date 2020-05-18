@@ -20,7 +20,7 @@ class base:
     def train(self, metric, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
-        self.model.compile(loss=L.batch_all(metric),
+        self.model.compile(loss=L.batch_mode(metric),
                            optimizer=self.optimizer)
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(f"./weights/weight_best_{metric}.hdf5",
