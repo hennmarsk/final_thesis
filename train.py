@@ -14,7 +14,7 @@ class base:
         self.sample = 16
         self.epochs = 100
         self.step_v = int(self.step_t / 32)
-        self.learning_rate = 1e-2
+        self.learning_rate = 2e-2
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
     def train(self, metric, pretrain=''):
