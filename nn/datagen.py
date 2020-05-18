@@ -119,7 +119,7 @@ def ms1m_gen(batch_size):
                     neg.clear()
 
 
-def ms1m_gen_batch(batch_size):
+def ms1m_gen_batch(batch_size, sample_size):
     path_idx = "./data/faces_emore/train.idx"
     path_rec = "./data/faces_emore/train.rec"
     imgrec = recordio.MXIndexedRecordIO(path_idx, path_rec, 'r')
@@ -132,7 +132,7 @@ def ms1m_gen_batch(batch_size):
         people = random.sample(keys, batch_size)
         for person in people:
             imgs = random.sample(ms1m_list[person], np.min(
-                [16, len(ms1m_list[person])]))
+                [sample_size, len(ms1m_list[person])]))
             for src in imgs:
                 header, s = recordio.unpack(imgrec.read_idx(int(src)))
                 img = mx.image.imdecode(s).asnumpy() / 255

@@ -1,11 +1,10 @@
-from tensorflow.keras import applications
 import cv2
 import numpy as np
 from tensorflow.keras import backend as K
+import nn.my_model
 
 
-model = applications.resnet_v2.ResNet50V2(
-    weights=None, input_shape=[112, 112, 3], classes=128)
+model = nn.my_model.create_model([112, 112, 3])
 model.load_weights(filepath="./weights/weight_best_euclid.hdf5")
 
 f = open("./data/pairs.txt").readlines()
@@ -41,7 +40,7 @@ for line in f:
         p1 = x[0]
         p2 = x[1]
         print("positive", _euclid(p1, p2))
-        if (_euclid(p1, p2) < 0.2):
+        if (_euclid(p1, p2) < 0.5):
             tp += 1
         else:
             fp += 1
@@ -58,4 +57,8 @@ for line in f:
             tn += 1
         else:
             fn += 1
+print("false positive:", fp)
+print("true positive:", tp)
+print("false negative:", fn)
+print("true negative: ", tn)
 print("accuracy:", (tp + tn) / (tp + tn + fp + fn))

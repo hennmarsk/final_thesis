@@ -11,12 +11,15 @@ class base:
         self.model = my_model.create_model(self.input_shape)
         self.batch = 10
         self.step_t = 32000
+        self.sample = 16
         self.epochs = 100
         self.step_v = int(self.step_t / 8)
-        self.learning_rate = 1e-3
+        self.learning_rate = 1e-2
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
-    def train(self, metric):
+    def train(self, metric, pretrain):
+        if (len(pretrain) > 0):
+            self.model.load_weights(pretrain)
         self.model.compile(loss=L.batch_all(),
                            optimizer=self.optimizer)
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
@@ -26,7 +29,7 @@ class base:
                                      mode='auto', period=1)
         callbacks_list = [csv_logger, checkpoint]
         self.model.fit_generator(generator=dg.ms1m_gen_batch(
-            self.batch),
+            self.batch, self.sample),
             epochs=self.epochs,
             steps_per_epoch=self.step_t,
             callbacks=callbacks_list)
@@ -34,4 +37,4 @@ class base:
 
 
 l2 = base()
-l2.train('euclid')
+l2.train('euclid', './weights/weight_best_euclid.hdf5')
