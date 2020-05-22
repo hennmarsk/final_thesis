@@ -5,7 +5,7 @@ import nn.my_model
 
 
 model = nn.my_model.create_model([112, 112, 3])
-model.load_weights(filepath="./weights/weight_best_euclid.hdf5")
+model.load_weights(filepath="./weights/weight_best_euclid1.hdf5")
 
 f = open("./data/pairs.txt").readlines()
 tp = 0.0
