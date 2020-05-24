@@ -4,16 +4,6 @@ from tensorflow.keras import backend as K
 import nn.my_model
 
 
-model = nn.my_model.create_model([112, 112, 3])
-model.load_weights(filepath="./weights/weight_best_euclid1.hdf5")
-
-f = open("./data/pairs.txt").readlines()
-tp = 0.0
-tn = 0.0
-fp = 0.0
-fn = 0.0
-
-
 def _euclid(x, y):
     return K.sqrt(K.sum(K.square(x - y), axis=0))
 
@@ -28,6 +18,14 @@ def _name(name, number):
     return s
 
 
+model = nn.my_model.create_model([112, 112, 3], "mobilenet")
+model.load_weights(filepath="./weights/weight_best_euclid_mobilenet.hdf5")
+
+f = open("./data/pairs.txt").readlines()
+tp = 0.0
+tn = 0.0
+fp = 0.0
+fn = 0.0
 for line in f:
     split = line.split()
     if len(split) == 3:
