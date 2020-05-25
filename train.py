@@ -10,20 +10,22 @@ class base:
         self.input_shape = [112, 112, 3]
         self.t = t
         self.model = my_model.create_model(self.input_shape, t)
-        self.batch = 16
+        self.batch = 2
         self.step_t = 3200
-        self.sample = 16
+        self.sample = 80
         self.epochs = 1000
         self.step_v = int(self.step_t / 32)
-        self.learning_rate = 1e-2
+        self.learning_rate = 5e-4
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
     def train(self, metric, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
+
         self.model.compile(
             loss=L.pairwise_loss(metric),
             optimizer=self.optimizer)
+
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
             f"./weights/weight_best_{metric}_{self.t}.hdf5",
@@ -31,15 +33,17 @@ class base:
             save_best_only=True,
             mode='auto', save_freq='epoch')
         callbacks_list = [csv_logger, checkpoint]
+
         self.model.fit(
             x=dg.ms1m_gen_batch(
                 self.batch, self.sample),
             epochs=self.epochs,
             steps_per_epoch=self.step_t,
             callbacks=callbacks_list)
+
         self.model.save_weights(
             f"./weights/final_weight_{metric}_{self.t}.hdf5")
 
 
-l2 = base("mobilenet")
+l2 = base("resnet")
 l2.train('euclid')
