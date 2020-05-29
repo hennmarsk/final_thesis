@@ -10,26 +10,27 @@ class base:
         self.input_shape = [112, 112, 3]
         self.t = t
         self.model = my_model.create_model(self.input_shape, t)
-        self.batch = 2
+        self.batch = 12
         self.step_t = 3200
-        self.sample = 80
+        self.sample = 13
         self.epochs = 1000
         self.step_v = int(self.step_t / 32)
-        self.learning_rate = 5e-4
+        self.learning_rate = 1e-3
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
     def train(self, metric, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
-
         self.model.compile(
-            loss=L.pairwise_loss(metric),
-            optimizer=self.optimizer)
+            loss=L.batch_mode(metric, mode='semi'),
+            optimizer=self.optimizer,
+            metrics=[L.valid_pos(metric, mode='semi'),
+                     L.pos_all(metric, mode='semi')])
 
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
             f"./weights/weight_best_{metric}_{self.t}.hdf5",
-            monitor='loss', verbose=1,
+            monitor='p_a', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
         callbacks_list = [csv_logger, checkpoint]
@@ -46,4 +47,4 @@ class base:
 
 
 l2 = base("resnet")
-l2.train('euclid')
+l2.train('euclid', "./weights/weight_best_euclid_resnet.hdf5")

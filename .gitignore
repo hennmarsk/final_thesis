@@ -1,4 +1,4 @@
-/data
-/weights
+/data/
+/weights/
 /histories
 /log.csv
