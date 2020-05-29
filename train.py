@@ -10,9 +10,9 @@ class base:
         self.input_shape = [112, 112, 3]
         self.t = t
         self.model = my_model.create_model(self.input_shape, t)
-        self.batch = 12
+        self.batch = 16
         self.step_t = 3200
-        self.sample = 13
+        self.sample = 16
         self.epochs = 1000
         self.step_v = int(self.step_t / 32)
         self.learning_rate = 1e-3
@@ -22,10 +22,9 @@ class base:
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
         self.model.compile(
-            loss=L.batch_mode(metric, mode='semi'),
+            loss=L.batch_mode(metric, mode='all'),
             optimizer=self.optimizer,
-            metrics=[L.valid_pos(metric, mode='semi'),
-                     L.pos_all(metric, mode='semi')])
+            metrics=[L.pos_all(metric, mode='all')])
 
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
@@ -46,5 +45,5 @@ class base:
             f"./weights/final_weight_{metric}_{self.t}.hdf5")
 
 
-l2 = base("resnet")
-l2.train('euclid', "./weights/weight_best_euclid_resnet.hdf5")
+l2 = base("mobilenet")
+l2.train('euclid')
