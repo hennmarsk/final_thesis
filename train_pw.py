@@ -22,13 +22,13 @@ class base:
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
         self.model.compile(
-            loss=L.batch_mode(metric, mode='all'),
+            loss=L.pairwise_loss(metric),
             optimizer=self.optimizer,
-            metrics=[L.pos_all(metric)])
+            metrics=[L.pos_all_pairwise(metric), L.neg_all_pairwise(metric)])
 
-        csv_logger = CSVLogger('log.csv', append=True, separator=';')
+        csv_logger = CSVLogger('log_pw.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
-            f"./weights/weight_best_{metric}_{self.t}.hdf5",
+            f"./weights/best_{metric}_{self.t}_pw.hdf5",
             monitor='p_a', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
