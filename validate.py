@@ -18,8 +18,8 @@ def _name(name, number):
     return s
 
 
-model = nn.my_model.create_model([112, 112, 3], "resnet")
-model.load_weights(filepath="./weights/weight_best_euclid_resnet.hdf5")
+model = nn.my_model.create_model([112, 112, 3], "mobilenet")
+model.load_weights(filepath="./weights/weight_best_euclid_mobilenet.hdf5")
 
 f = open("./data/pairs.txt").readlines()
 tp = 0.0

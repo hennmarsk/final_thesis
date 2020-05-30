@@ -6,10 +6,9 @@ from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 
 
 class base:
-    def __init__(self, t):
+    def __init__(self):
         self.input_shape = [112, 112, 3]
-        self.t = t
-        self.model = my_model.create_model(self.input_shape, t)
+        self.model = my_model.create_model(self.input_shape)
         self.batch = 16
         self.step_t = 3200
         self.sample = 16
@@ -28,7 +27,7 @@ class base:
 
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
-            f"./weights/weight_best_{metric}_{self.t}.hdf5",
+            f"./weights/weight_best_{metric}.hdf5",
             monitor='p_a', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
@@ -42,8 +41,8 @@ class base:
             callbacks=callbacks_list)
 
         self.model.save_weights(
-            f"./weights/final_weight_{metric}_{self.t}.hdf5")
+            f"./weights/final_weight_{metric}.hdf5")
 
 
-l2 = base("mobilenet")
-l2.train('euclid')
+l2 = base()
+l2.train('euclid', './weights/weight_best_euclid.hdf5')
