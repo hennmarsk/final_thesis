@@ -6,13 +6,12 @@ from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint
 
 
 class base:
-    def __init__(self, t):
+    def __init__(self):
         self.input_shape = [112, 112, 3]
-        self.t = t
-        self.model = my_model.create_model(self.input_shape, t)
-        self.batch = 16
+        self.model = my_model.create_model(self.input_shape)
+        self.batch = 12
         self.step_t = 3200
-        self.sample = 16
+        self.sample = 12
         self.epochs = 1000
         self.step_v = int(self.step_t / 32)
         self.learning_rate = 1e-3
@@ -24,12 +23,12 @@ class base:
         self.model.compile(
             loss=L.pairwise_loss(metric),
             optimizer=self.optimizer,
-            metrics=[L.pos_all_pairwise(metric), L.neg_all_pairwise(metric)])
+            metrics=[L.pos_neg_all(metric)])
 
         csv_logger = CSVLogger('log_pw.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
-            f"./weights/best_{metric}_{self.t}_pw.hdf5",
-            monitor='p_a', verbose=1,
+            f"./weights/best_{metric}_pw.hdf5",
+            monitor='loss', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
         callbacks_list = [csv_logger, checkpoint]
@@ -42,8 +41,8 @@ class base:
             callbacks=callbacks_list)
 
         self.model.save_weights(
-            f"./weights/final_weight_{metric}_{self.t}.hdf5")
+            f"./weights/final_{metric}_pw.hdf5")
 
 
-l2 = base("mobilenet")
+l2 = base()
 l2.train('euclid')

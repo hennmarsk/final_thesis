@@ -76,9 +76,9 @@ def batch_mode(metric, margin=0.5, squared=False, mode="semi"):
         triplet_loss = tf.maximum(triplet_loss, 0.0)
         if mode == 'semi':
             mask1 = tf.logical_and(tf.greater(
-                triplet_loss, 1e-16), tf.less(triplet_loss, margin))
+                triplet_loss, 0.0), tf.less(triplet_loss, margin))
         else:
-            mask1 = tf.greater(triplet_loss, 1e-16)
+            mask1 = tf.greater(triplet_loss, 0.0)
         valid_triplets = tf.cast(mask1, tf.float32)
         triplet_loss = tf.multiply(valid_triplets, triplet_loss)
         num_valid_triplets = tf.reduce_sum(valid_triplets)
@@ -104,7 +104,7 @@ def pos_all(metric, margin=0.5, squared=False):
         triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
         num_triplets = tf.reduce_sum(mask)
-        mask2 = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float32)
+        mask2 = tf.cast(tf.greater(triplet_loss, 0.0), tf.float32)
         num_positive_triplets = tf.reduce_sum(mask2)
         fraction2 = num_positive_triplets / num_triplets
         return fraction2
@@ -134,7 +134,7 @@ def pairwise_loss(metric, margin=0.5, squared=False):
     return instance
 
 
-def pos_neg_all_pairwise(metric, margin=0.5, squared=False):
+def pos_neg_all(metric, margin=0.5, squared=False):
     def p_n_a(y_true, y_pred):
         pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
@@ -144,13 +144,14 @@ def pos_neg_all_pairwise(metric, margin=0.5, squared=False):
         mask_anchor_negative = tf.cast(mask_anchor_negative, tf.float32)
         _positive = pairwise_dist * mask_anchor_positive
         num_pair_pos = tf.reduce_sum(mask_anchor_positive)
-        _mask_positive = tf.cast(tf.greater(_positive, margin), tf.float32)
+        _mask_positive = tf.cast(
+            tf.greater_equal(_positive, margin), tf.float32)
         positive_pair = tf.reduce_sum(_mask_positive)
         _negative = tf.maximum(margin - pairwise_dist, 0.0)
         _negative = _negative * mask_anchor_negative
         _mask_negative = tf.cast(tf.greater(_negative, 0.0), tf.float32)
         num_pair_neg = tf.reduce_sum(mask_anchor_negative)
         negative_pair = tf.reduce_sum(_mask_negative)
-        return (positive_pair / num_pair_pos +
-                negative_pair / num_pair_neg) / 2
+        return (positive_pair / tf.maximum(num_pair_pos, 1e-16) +
+                negative_pair / tf.maximum(num_pair_neg, 1e-16)) / 2
     return p_n_a

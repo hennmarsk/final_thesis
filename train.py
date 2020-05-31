@@ -13,7 +13,6 @@ class base:
         self.step_t = 3200
         self.sample = 16
         self.epochs = 1000
-        self.step_v = int(self.step_t / 32)
         self.learning_rate = 1e-3
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
@@ -27,8 +26,8 @@ class base:
 
         csv_logger = CSVLogger('log.csv', append=True, separator=';')
         checkpoint = ModelCheckpoint(
-            f"./weights/weight_best_{metric}.hdf5",
-            monitor='p_a', verbose=1,
+            f"./weights/best_{metric}_tl.hdf5",
+            monitor='loss', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
         callbacks_list = [csv_logger, checkpoint]
@@ -41,8 +40,8 @@ class base:
             callbacks=callbacks_list)
 
         self.model.save_weights(
-            f"./weights/final_weight_{metric}.hdf5")
+            f"./weights/final_{metric}_tl.hdf5")
 
 
 l2 = base()
-l2.train('euclid', './weights/weight_best_euclid.hdf5')
+l2.train('euclid')
