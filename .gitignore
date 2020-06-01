@@ -1,5 +1,5 @@
-/data
-/weights
+/data/*
+/weights/*
 /histories
 /log.csv
 /log_pw.csv
