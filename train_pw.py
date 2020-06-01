@@ -9,9 +9,9 @@ class base:
     def __init__(self):
         self.input_shape = [112, 112, 3]
         self.model = my_model.create_model(self.input_shape)
-        self.batch = 12
+        self.batch = 2
         self.step_t = 3200
-        self.sample = 12
+        self.sample = 64
         self.epochs = 1000
         self.step_v = int(self.step_t / 32)
         self.learning_rate = 1e-3

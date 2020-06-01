@@ -32,9 +32,9 @@ def _name(name, number):
     return s
 
 
-def _validate(metric):
+def _validate(metric, loss):
     model = nn.my_model.create_model([112, 112, 3])
-    model.load_weights(filepath=f"./weights/weight_best_{metric}.hdf5")
+    model.load_weights(filepath=f"./weights/best_{metric}_{loss}.hdf5")
     f = open("./data/pairs.txt").readlines()
     tp = 0.0
     tn = 0.0
@@ -76,4 +76,4 @@ def _validate(metric):
     print("accuracy:", (tp + tn) / (tp + tn + fp + fn))
 
 
-_validate('euclid')
+_validate('euclid', 'tl')
