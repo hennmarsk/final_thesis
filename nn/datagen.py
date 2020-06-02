@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import random
 import mxnet as mx
+import os
 from mxnet import recordio
 
 
@@ -138,4 +139,37 @@ def ms1m_gen_batch(batch_size, sample_size):
                 img = mx.image.imdecode(s).asnumpy() / 255
                 x.append(img)
                 y.append(person)
+        yield np.array(x), np.array(y)
+
+
+def _get_list(fl):
+    fl_list = {}
+    f = os.listdir(f"./data/{fl}_96")
+    for folder in f:
+        key = f"./data/{fl}_96/{folder}"
+        imgs = os.listdir(key)
+        for src in imgs:
+            data = f"./data/{fl}_96/{folder}/{src}"
+            if folder in fl_list:
+                fl_list[folder].append(data)
+            else:
+                fl_list[folder] = [data]
+    np.save(f'./{fl}_list.npy', fl_list)
+
+
+def casia_gen_batch(batch_size, sample_size):
+    casia_list = np.load("casia_list.npy", allow_pickle=True).item()
+    keys = list(casia_list.keys())
+    random.seed(a=None)
+    while True:
+        x = []
+        y = []
+        people = random.sample(keys, batch_size)
+        for person in people:
+            imgs = random.sample(casia_list[person], np.min(
+                [sample_size, len(casia_list[person])]))
+            for src in imgs:
+                img = cv2.imread(src) / 255
+                x.append(img)
+                y.append(int(person))
         yield np.array(x), np.array(y)

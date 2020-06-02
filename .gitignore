@@ -1,7 +1,7 @@
 /data/*
 /weights/*
 /histories
-/log.csv
-/log_pw.csv
+/log.txt
+/log_pw.txt
 !/data/.gitkeep
 !/weights/.gitkeep

@@ -59,7 +59,7 @@ def _get_triplet_mask(y_true):
     return mask
 
 
-def batch_mode(metric, margin=0.5, squared=False, mode="semi"):
+def batch_all(metric, margin=0.5, squared=False):
     def instance(y_true, y_pred):
         pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
@@ -74,17 +74,18 @@ def batch_mode(metric, margin=0.5, squared=False, mode="semi"):
         mask = tf.cast(mask, tf.float32)
         triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
-        if mode == 'semi':
-            mask1 = tf.logical_and(tf.greater(
-                triplet_loss, 0.0), tf.less(triplet_loss, margin))
-        else:
-            mask1 = tf.greater(triplet_loss, 0.0)
-        valid_triplets = tf.cast(mask1, tf.float32)
-        triplet_loss = tf.multiply(valid_triplets, triplet_loss)
-        num_valid_triplets = tf.reduce_sum(valid_triplets)
-        triplet_loss = tf.reduce_sum(
-            triplet_loss) / tf.maximum(num_valid_triplets, 1e-16)
-        return triplet_loss
+        mask1 = tf.logical_and(tf.greater(
+            triplet_loss, 0.0), tf.less(triplet_loss, margin))
+        mask2 = tf.greater_equal(triplet_loss, margin)
+        semi = tf.cast(mask1, tf.float32)
+        hard = tf.cast(mask2, tf.float32)
+        loss_semi = tf.multiply(semi, triplet_loss)
+        loss_hard = tf.multiply(hard, triplet_loss)
+        num_semi = tf.reduce_sum(semi)
+        num_hard = tf.reduce_sum(hard)
+        loss = tf.reduce_sum(loss_semi) / tf.maximum(num_semi, 1e-16) + \
+            tf.reduce_sum(loss_hard) / tf.maximum(num_hard, 1e-16)
+        return loss / 2
     return instance
 
 
