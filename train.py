@@ -16,7 +16,7 @@ def _euclid(x, y):
 def _cosine(x, y):
     nx = tf.nn.l2_normalize(x, 0)
     ny = tf.nn.l2_normalize(y, 0)
-    return tf.reduce_sum(tf.multiply(nx, ny))
+    return 1 - tf.reduce_sum(tf.multiply(nx, ny))
 
 
 def _distance(x, y, metric):
@@ -47,7 +47,6 @@ class validate(Callback):
         tn = 0.0
         fp = 0.0
         fn = 0.0
-        print(self.metric)
         for line in f:
             split = line.split()
             if len(split) == 3:
@@ -72,9 +71,10 @@ class validate(Callback):
                 else:
                     fn += 1
         print("acc:", (tp + tn) / (tp + tn + fp + fn))
-        f = open('./log.txt', 'w')
+        f = open('./log.txt', 'a')
         f.write(
-            f'{logs["loss"]};{logs["p_a"]};{(tp + tn) / (tp + tn + fp + fn)};{tp};{fp};{tn};{fn}')
+            f'{logs["loss"]};{logs["p_a"]}; \
+            {(tp + tn) / (tp + tn + fp + fn)};{tp};{fp};{tn};{fn}\n')
         f.close()
 
 
@@ -114,4 +114,4 @@ class base:
 
 
 l2 = base()
-l2.train('euclid')
+l2.train('cosine')

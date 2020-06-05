@@ -59,8 +59,12 @@ def _get_triplet_mask(y_true):
     return mask
 
 
-def batch_all(metric, margin=0.5, squared=False):
+def batch_all(metric, squared=False):
     def instance(y_true, y_pred):
+        if metric == 'euclid':
+            margin = 0.4
+        else:
+            margin = 0.5
         pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
@@ -74,6 +78,10 @@ def batch_all(metric, margin=0.5, squared=False):
         mask = tf.cast(mask, tf.float32)
         triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
+        # mask1 = tf.cast(tf.greater(triplet_loss, 0.0), tf.float32)
+        # num_vail = tf.reduce_sum(mask1)
+        # sum_loss = tf.reduce_sum(triplet_loss * mask1)
+        # return sum_loss / tf.maximum(num_vail, 1e-16)
         mask1 = tf.logical_and(tf.greater(
             triplet_loss, 0.0), tf.less(triplet_loss, margin))
         mask2 = tf.greater_equal(triplet_loss, margin)
@@ -85,7 +93,7 @@ def batch_all(metric, margin=0.5, squared=False):
         num_hard = tf.reduce_sum(hard)
         loss = tf.reduce_sum(loss_semi) / tf.maximum(num_semi, 1e-16) + \
             tf.reduce_sum(loss_hard) / tf.maximum(num_hard, 1e-16)
-        return loss / 2
+        return loss
     return instance
 
 
