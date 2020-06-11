@@ -14,7 +14,8 @@ def _resize_image(size):
 
 def _resize(fl, size):
     f = os.listdir(f"./data/{fl}")
-    for folder in f:
+    for i, folder in enumerate(f):
+        print(f'{i}\r', end='')
         imgs = os.listdir(f"./data/{fl}/{folder}")
         for src in imgs:
             img = cv2.imread(f"./data/{fl}/{folder}/{src}")
@@ -26,7 +27,6 @@ def _resize(fl, size):
             cv2.imwrite(f"./data/{fl}_{size}/{folder}/{src}", img)
 
 
-_resize('casia', 96)
+_resize('casia', '112')
 print('done')
-_resize('lfw', 96)
-print('done')
+_resize('lfw', '112')

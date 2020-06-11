@@ -28,7 +28,7 @@ def _distance(x, y, metric):
 
 def _name(name, number):
     t = 4 - len(number)
-    s = f"./data/lfw_96/{name}/{name}_"
+    s = f"./data/lfw_112/{name}/{name}_"
     for i in range(t):
         s += '0'
     s += number
@@ -71,29 +71,28 @@ class validate(Callback):
                 else:
                     fn += 1
         print("acc:", (tp + tn) / (tp + tn + fp + fn))
-        f = open('./log.txt', 'a')
+        f = open(f'./log.txt', 'a')
         f.write(
-            f'{logs["loss"]};{logs["p_a"]}; \
-            {(tp + tn) / (tp + tn + fp + fn)};{tp};{fp};{tn};{fn}\n')
+            f'{epoch};{logs["loss"]};{logs["p_a"]};{(tp + tn) / (tp + tn + fp + fn)};{tp};{fp};{tn};{fn}\n')
         f.close()
 
 
 class base:
     def __init__(self):
-        self.input_shape = [96, 96, 3]
+        self.input_shape = [112, 112, 3]
         self.model = my_model.create_model(self.input_shape)
         self.batch = 18
         self.step_t = 3200
         self.sample = 14
         self.epochs = 1000
-        self.learning_rate = 1e-3
-        self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
+        self.learning_rate = 5e-2
+        self.optimizer = optimizers.Adagrad(learning_rate=self.learning_rate)
 
-    def train(self, metric, pretrain=''):
+    def train(self, metric, batch_mode, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
         self.model.compile(
-            loss=L.batch_all(metric),
+            loss=L.batch_all(metric, mode=batch_mode),
             optimizer=self.optimizer,
             metrics=[L.pos_all(metric)])
         val = validate(metric)
@@ -114,4 +113,4 @@ class base:
 
 
 l2 = base()
-l2.train('cosine')
+l2.train('euclid', 'all')

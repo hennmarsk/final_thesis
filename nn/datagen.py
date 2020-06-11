@@ -144,12 +144,12 @@ def ms1m_gen_batch(batch_size, sample_size):
 
 def _get_list(fl):
     fl_list = {}
-    f = os.listdir(f"./data/{fl}_96")
+    f = os.listdir(f"./data/{fl}_112")
     for folder in f:
-        key = f"./data/{fl}_96/{folder}"
+        key = f"./data/{fl}_112/{folder}"
         imgs = os.listdir(key)
         for src in imgs:
-            data = f"./data/{fl}_96/{folder}/{src}"
+            data = f"./data/{fl}_112/{folder}/{src}"
             if folder in fl_list:
                 fl_list[folder].append(data)
             else:
