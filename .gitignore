@@ -1,7 +1,10 @@
 /data/*
 /weights/*
 /histories
-/log.txt
+/log_euclid_semi.txt
+/log_cosine_semi.txt
+/log_cosine_all.txt
+/log_euclid_all.txt
 /log_pw.txt
 !/data/.gitkeep
 !/weights/.gitkeep

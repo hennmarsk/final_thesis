@@ -15,8 +15,8 @@ def _pairwise_euclid(y_pred, squared=False):
 def _pairwise_cosine(y_pred):
     normalize_a = tf.nn.l2_normalize(y_pred, 1)
     normalize_b = tf.nn.l2_normalize(tf.transpose(y_pred), 1)
-    distance = 1 - tf.matmul(normalize_a, normalize_b)
-    return distance
+    distances = 1 - tf.matmul(normalize_a, normalize_b)
+    return distances
 
 
 def _distance(metric, y_pred, squared=False):
@@ -59,7 +59,7 @@ def _get_triplet_mask(y_true):
     return mask
 
 
-def batch_all(metric, squared=False, mode="mean"):
+def batch_all(metric, mode, alpha, beta, squared=False):
     def instance(y_true, y_pred):
         if metric == 'euclid':
             margin = 0.5
@@ -75,31 +75,30 @@ def batch_all(metric, squared=False, mode="mean"):
             anchor_negative_dist.shape)
         triplet_loss = anchor_positive_dist - anchor_negative_dist + margin
         mask = _get_triplet_mask(y_true)
-        mask = tf.cast(mask, tf.float32)
-        triplet_loss = tf.multiply(mask, triplet_loss)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
+        triplet_loss = tf.boolean_mask(triplet_loss, mask)
         mask1 = tf.logical_and(tf.greater(
             triplet_loss, 0.0), tf.less(triplet_loss, margin))
         mask2 = tf.greater_equal(triplet_loss, margin)
-        semi = tf.cast(mask1, tf.float32)
-        hard = tf.cast(mask2, tf.float32)
-        loss_semi = tf.multiply(semi, triplet_loss)
-        loss_hard = tf.multiply(hard, triplet_loss)
-        num_semi = tf.reduce_sum(semi)
-        num_hard = tf.reduce_sum(hard)
-        if mode == 'mean':
-            loss = tf.reduce_sum(loss_semi) / tf.maximum(num_semi, 1e-16) + \
-                tf.reduce_sum(loss_hard) / tf.maximum(num_hard, 1e-16)
-            return loss
+        dump = tf.boolean_mask(triplet_loss, mask1)
+        lower = tf.reduce_mean(dump)
+        maxl = tf.reduce_max(dump)
+        minl = tf.reduce_min(dump)
+        dump = tf.boolean_mask(triplet_loss, mask2)
+        upper = tf.reduce_mean(dump)
+        maxu = tf.reduce_max(dump)
+        minu = tf.reduce_min(dump)
+        mask1 = tf.logical_and(tf.greater_equal(
+            triplet_loss, minl + (1 - alpha) * (lower - minl)),
+            tf.less_equal(triplet_loss, maxl - alpha * (maxl - lower)))
+        mask2 = tf.logical_and(tf.greater_equal(
+            triplet_loss, minu + (1 - beta) * (upper - minu)),
+            tf.less_equal(triplet_loss, maxu - beta * (maxu - upper)))
+        if mode == 'all':
+            return tf.reduce_mean(tf.boolean_mask(triplet_loss, mask1)) + \
+                tf.reduce_mean(tf.boolean_mask(triplet_loss, mask2))
         elif mode == 'semi':
-            loss = tf.reduce_sum(loss_semi) / tf.maximum(num_semi, 1e-16)
-            return loss
-        else:
-            mask1 = tf.cast(tf.greater(triplet_loss, 0.0), tf.float32)
-            num_vail = tf.reduce_sum(mask1)
-            sum_loss = tf.reduce_sum(triplet_loss * mask1)
-            loss = sum_loss / tf.maximum(num_vail, 1e-16)
-            return loss
+            return tf.boolean_mask(triplet_loss, mask2)
     return instance
 
 
@@ -119,10 +118,9 @@ def pos_all(metric, squared=False):
             anchor_negative_dist.shape)
         triplet_loss = anchor_positive_dist - anchor_negative_dist + margin
         mask = _get_triplet_mask(y_true)
-        mask = tf.cast(mask, tf.float32)
-        triplet_loss = tf.multiply(mask, triplet_loss)
+        triplet_loss = tf.boolean_mask(triplet_loss, mask)
         triplet_loss = tf.maximum(triplet_loss, 0.0)
-        num_triplets = tf.reduce_sum(mask)
+        num_triplets = tf.cast(tf.size(triplet_loss), tf.float32)
         mask2 = tf.cast(tf.greater(triplet_loss, 0.0), tf.float32)
         num_positive_triplets = tf.reduce_sum(mask2)
         fraction2 = num_positive_triplets / num_triplets

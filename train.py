@@ -37,9 +37,10 @@ def _name(name, number):
 
 
 class validate(Callback):
-    def __init__(self, metric):
+    def __init__(self, metric, batch_mode):
         super(Callback, self).__init__()
         self.metric = metric
+        self.mode = batch_mode
 
     def on_epoch_end(self, epoch, logs=None):
         f = open("./data/pairs.txt").readlines()
@@ -47,7 +48,7 @@ class validate(Callback):
         tn = 0.0
         fp = 0.0
         fn = 0.0
-        for line in f:
+        for i, line in enumerate(f):
             split = line.split()
             if len(split) == 3:
                 # print(_name(split[0], split[1]))
@@ -66,14 +67,16 @@ class validate(Callback):
                 x = self.model.predict(np.array([img1, img2]))
                 p1 = x[0]
                 p2 = x[1]
-                if (_distance(p1, p2, self.metric) > 0.5):
+                if (_distance(p1, p2, self.metric) >= 0.5):
                     tn += 1
                 else:
                     fn += 1
-        print("acc:", (tp + tn) / (tp + tn + fp + fn))
-        f = open(f'./log.txt', 'a')
+            print(f'{int(i / 60)} %\r', end='')
+        acc = (tp + tn) / (tp + tn + fp + fn)
+        print("acc:", acc)
+        f = open(f'./log_{self.metric}_{self.mode}.txt', 'a')
         f.write(
-            f'{epoch};{logs["loss"]};{logs["p_a"]};{(tp + tn) / (tp + tn + fp + fn)};{tp};{fp};{tn};{fn}\n')
+            f'{epoch};{logs["p_a"]};{acc};{tp};{fp};{tn};{fn}\n')
         f.close()
 
 
@@ -81,24 +84,27 @@ class base:
     def __init__(self):
         self.input_shape = [112, 112, 3]
         self.model = my_model.create_model(self.input_shape)
-        self.batch = 18
+        self.batch = 40
         self.step_t = 3200
-        self.sample = 14
+        self.sample = 4
         self.epochs = 1000
-        self.learning_rate = 5e-2
-        self.optimizer = optimizers.Adagrad(learning_rate=self.learning_rate)
+        self.learning_rate = 1e-3
+        self.alpha = 0.275
+        self.beta = 0.625
+        self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
     def train(self, metric, batch_mode, pretrain=''):
         if (len(pretrain) > 0):
             self.model.load_weights(pretrain)
         self.model.compile(
-            loss=L.batch_all(metric, mode=batch_mode),
+            loss=L.batch_all(metric, alpha=self.alpha,
+                             beta=self.beta, mode=batch_mode),
             optimizer=self.optimizer,
             metrics=[L.pos_all(metric)])
-        val = validate(metric)
+        val = validate(metric, batch_mode)
         checkpoint = ModelCheckpoint(
-            f"./weights/best_{metric}_tl.hdf5",
-            monitor='loss', verbose=1,
+            f"./weights/best_{metric}_{batch_mode}.hdf5",
+            monitor='p_a', verbose=1,
             save_best_only=True,
             mode='auto', save_freq='epoch')
         callbacks_list = [checkpoint, val]
@@ -113,4 +119,4 @@ class base:
 
 
 l2 = base()
-l2.train('euclid', 'all')
+l2.train('cosine', 'all')
