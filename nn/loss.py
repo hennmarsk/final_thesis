@@ -94,9 +94,18 @@ def batch_all(metric, mode, alpha, beta, squared=False):
         mask2 = tf.logical_and(tf.greater_equal(
             triplet_loss, minu + (1 - beta) * (upper - minu)),
             tf.less_equal(triplet_loss, maxu - beta * (maxu - upper)))
+        loss_semi = tf.boolean_mask(triplet_loss, mask1)
+        if (tf.size(loss_semi) > 0):
+            loss_semi = tf.reduce_mean(loss_semi)
+        else:
+            loss_semi = 0.0
+        loss_hard = tf.boolean_mask(triplet_loss, mask2)
+        if (tf.size(loss_hard) > 0):
+            loss_hard = tf.reduce_mean(loss_hard)
+        else:
+            loss_hard = 0.0
         if mode == 'all':
-            return tf.reduce_mean(tf.boolean_mask(triplet_loss, mask1)) + \
-                tf.reduce_mean(tf.boolean_mask(triplet_loss, mask2))
+            return loss_semi + loss_hard
         elif mode == 'semi':
             return tf.boolean_mask(triplet_loss, mask2)
     return instance
