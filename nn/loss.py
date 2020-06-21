@@ -1,6 +1,25 @@
 import tensorflow as tf
 
 
+def _zero(x):
+    a = tf.cond(
+        tf.equal(tf.size(x), 0),
+        lambda: tf.constant(0.0), lambda: tf.reduce_mean(x))
+    return a
+
+
+def _filter(x, ratio):
+    sz = tf.size(x)
+    ones = tf.cast(tf.cast(sz, tf.float32) * ratio, tf.int32)
+    zeros = sz - ones
+    a_ones = tf.ones([ones], dtype=tf.bool)
+    a_zeros = tf.zeros([zeros], dtype=tf.bool)
+    f = tf.concat((a_ones, a_zeros), axis=0)
+    f = tf.random.shuffle(f)
+    a = tf.boolean_mask(x, f)
+    return a
+
+
 def _pairwise_euclid(y_pred, squared=False):
     dot_product = tf.matmul(y_pred, tf.transpose(y_pred))
     square_norm = tf.linalg.diag_part(dot_product)
@@ -81,33 +100,17 @@ def batch_all(metric, mode, alpha, beta, squared=False):
             triplet_loss, 0.0), tf.less(triplet_loss, margin))
         mask2 = tf.greater_equal(triplet_loss, margin)
         dump = tf.boolean_mask(triplet_loss, mask1)
-        lower = tf.reduce_mean(dump)
-        maxl = tf.reduce_max(dump)
-        minl = tf.reduce_min(dump)
+        loss_semi = _filter(dump, alpha)
         dump = tf.boolean_mask(triplet_loss, mask2)
-        upper = tf.reduce_mean(dump)
-        maxu = tf.reduce_max(dump)
-        minu = tf.reduce_min(dump)
-        mask1 = tf.logical_and(tf.greater_equal(
-            triplet_loss, minl + (1 - alpha) * (lower - minl)),
-            tf.less_equal(triplet_loss, maxl - alpha * (maxl - lower)))
-        mask2 = tf.logical_and(tf.greater_equal(
-            triplet_loss, minu + (1 - beta) * (upper - minu)),
-            tf.less_equal(triplet_loss, maxu - beta * (maxu - upper)))
-        loss_semi = tf.boolean_mask(triplet_loss, mask1)
-        if (tf.size(loss_semi) > 0):
-            loss_semi = tf.reduce_mean(loss_semi)
-        else:
-            loss_semi = 0.0
-        loss_hard = tf.boolean_mask(triplet_loss, mask2)
-        if (tf.size(loss_hard) > 0):
-            loss_hard = tf.reduce_mean(loss_hard)
-        else:
-            loss_hard = 0.0
+        loss_hard = _filter(dump, beta)
         if mode == 'all':
-            return loss_semi + loss_hard
+            loss_semi = _zero(loss_semi)
+            loss_hard = _zero(loss_hard)
+            return _zero(tf.stack((loss_semi, loss_hard), axis=0))
         elif mode == 'semi':
-            return tf.boolean_mask(triplet_loss, mask2)
+            return _zero(loss_semi)
+        elif mode == 'hard':
+            return _zero(loss_hard)
     return instance
 
 

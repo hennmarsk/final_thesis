@@ -144,12 +144,12 @@ def ms1m_gen_batch(batch_size, sample_size):
 
 def _get_list(fl):
     fl_list = {}
-    f = os.listdir(f"./data/{fl}_112")
+    f = os.listdir(f"./data/{fl}_96")
     for folder in f:
-        key = f"./data/{fl}_112/{folder}"
+        key = f"./data/{fl}_96/{folder}"
         imgs = os.listdir(key)
         for src in imgs:
-            data = f"./data/{fl}_112/{folder}/{src}"
+            data = f"./data/{fl}_96/{folder}/{src}"
             if folder in fl_list:
                 fl_list[folder].append(data)
             else:
@@ -173,3 +173,6 @@ def casia_gen_batch(batch_size, sample_size):
                 x.append(img)
                 y.append(int(person))
         yield np.array(x), np.array(y)
+
+
+_get_list('casia')

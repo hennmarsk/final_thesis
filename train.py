@@ -28,7 +28,7 @@ def _distance(x, y, metric):
 
 def _name(name, number):
     t = 4 - len(number)
-    s = f"./data/lfw_112/{name}/{name}_"
+    s = f"./data/lfw_96/{name}/{name}_"
     for i in range(t):
         s += '0'
     s += number
@@ -82,15 +82,15 @@ class validate(Callback):
 
 class base:
     def __init__(self):
-        self.input_shape = [112, 112, 3]
+        self.input_shape = [96, 96, 3]
         self.model = my_model.create_model(self.input_shape)
-        self.batch = 40
+        self.batch = 80
         self.step_t = 3200
         self.sample = 4
         self.epochs = 1000
         self.learning_rate = 1e-3
-        self.alpha = 0.275
-        self.beta = 0.625
+        self.alpha = 1 / self.sample / self.batch
+        self.beta = 1 / self.sample / self.batch
         self.optimizer = optimizers.Adam(learning_rate=self.learning_rate)
 
     def train(self, metric, batch_mode, pretrain=''):
