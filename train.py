@@ -43,6 +43,10 @@ class validate(Callback):
         self.mode = batch_mode
 
     def on_epoch_end(self, epoch, logs=None):
+        if self.metric == 'euclid':
+            margin = 0.35
+        else:
+            margin = 0.35
         f = open("./data/pairs.txt").readlines()
         tp = 0.0
         tn = 0.0
@@ -57,7 +61,7 @@ class validate(Callback):
                 x = self.model.predict(np.array([img1, img2]))
                 p1 = x[0]
                 p2 = x[1]
-                if (_distance(p1, p2, self.metric) < 0.5):
+                if (_distance(p1, p2, self.metric) < margin):
                     tp += 1
                 else:
                     fp += 1
@@ -67,7 +71,7 @@ class validate(Callback):
                 x = self.model.predict(np.array([img1, img2]))
                 p1 = x[0]
                 p2 = x[1]
-                if (_distance(p1, p2, self.metric) >= 0.5):
+                if (_distance(p1, p2, self.metric) >= margin):
                     tn += 1
                 else:
                     fn += 1
@@ -119,4 +123,4 @@ class base:
 
 
 l2 = base()
-l2.train('cosine', 'all')
+l2.train('euclid', 'all')

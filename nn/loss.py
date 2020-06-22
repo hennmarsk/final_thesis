@@ -81,9 +81,9 @@ def _get_triplet_mask(y_true):
 def batch_all(metric, mode, alpha, beta, squared=False):
     def instance(y_true, y_pred):
         if metric == 'euclid':
-            margin = 0.5
+            margin = 0.35
         else:
-            margin = 0.5
+            margin = 0.35
         pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
@@ -117,9 +117,9 @@ def batch_all(metric, mode, alpha, beta, squared=False):
 def pos_all(metric, squared=False):
     def p_a(y_true, y_pred):
         if metric == 'euclid':
-            margin = 0.5
+            margin = 0.35
         else:
-            margin = 0.5
+            margin = 0.35
         pairwise_dist = _distance(metric, y_pred, squared=squared)
         y_true = tf.squeeze(y_true, axis=-1)
         anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
